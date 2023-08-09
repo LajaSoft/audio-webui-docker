@@ -1,35 +1,34 @@
-
-# Use the official image as a parent image
-FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
+# Build Stage
+FROM nvidia/cuda:11.8.0-devel-ubuntu22.04 as build
 
 # Set the working directory in the container
 WORKDIR /app
 
-# Install Python and pip
-RUN --mount=type=cache,target=/var/cache/apt     apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-dev \
-    python3-venv \
-    build-essential \
-    wget \
-    unzip \
-    git \
-    ffmpeg \
-    && rm -rf /var/lib/apt/lists/* 
+# Install dependencies
+RUN --mount=type=cache,target=/var/cache/apt \
+    apt-get update && apt-get install -y \
+    python3 python3-pip python3-dev python3-venv build-essential wget unzip git ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && pip3 install --upgrade setuptools wheel \
+    && wget https://github.com/gitmylo/audio-webui/releases/download/Installers/audio-webui.zip \
+    && unzip audio-webui.zip \
+    && bash /app/install_linux_macos.sh
 
-# Upgrade setuptools
-RUN --mount=type=cache,target=/root/.cache/pip pip3 install --upgrade setuptools
+# Production Stage
+FROM nvidia/cuda:11.8.0-runtime-ubuntu22.04 as production
 
-# Install setuptools and wheel
-RUN --mount=type=cache,target=/root/.cache/pip pip3 install setuptools wheel
+# Create a non-root user with home directory /app
+RUN useradd --create-home --home-dir /app appuser
 
-RUN wget https://github.com/gitmylo/audio-webui/releases/download/Installers/audio-webui.zip
-RUN unzip audio-webui.zip
-RUN --mount=type=cache,target=/root/.cache/pip bash /app/install_linux_macos.sh
-WORKDIR /app/audio-webui
+# Switch to the non-root user
+USER appuser
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy necessary files and binaries from the build stage
+COPY --from=build /app /app
 COPY ./.env /app
-# COPY ./install.sh /app
 COPY ./run.sh /app
-# RUN --mount=type=cache,target=/root/.cache/pip bash /app/install.sh 
-# RUN --mount=type=cache,target=/root/.cache/pip pip3 install tensorboardX
+
+ENTRYPOINT ["/app/run.sh"]
