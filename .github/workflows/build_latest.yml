@@ -13,9 +13,31 @@ permissions:
   packages: write
   pull-requests: write
 
+# One build per branch, cancel out of date builds only on pull requests and feature branches
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ startsWith(github.ref, 'refs/pull/') || startsWith(github.ref, 'refs/heads/feature') }}
+
 jobs:
-  docker:
+  lint-dockerfile:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v3
+      - uses: reviewdog/action-hadolint@v1
+        with:
+          hadolint_ignore: DL3033 DL3003
+          fail_on_error: true
+          level: error
+          reporter: github-pr-review
+          filter_mode: added # Only lint added / modified lines
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  container-build-push:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Check out the repo
         uses: actions/checkout@v3
@@ -29,11 +51,11 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata (tags, labels) for container
         id: meta
-        uses: docker/metadata-action@9ec57ed1fcdbf14dcef7dfbe97b2010124a938b7
+        uses: docker/metadata-action@v4
         with:
-          images: ghcr.io/sammcj/audio-webui-docker #TODO: change me before PR
+          images: ghcr.io/${{ github.repository_owner }}/audio-webui-docker
           tags: |
             type=ref,event=branch
             type=ref,event=pr
@@ -42,11 +64,29 @@ jobs:
             ${{ github.ref }}
             latest
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+
+      - name: Set up container Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Available platforms
+        run: echo "${{ steps.buildx.outputs.platforms }}"
+
+      - name: Build and push container image
+        id: docker_build
+        uses: docker/build-push-action@v4
         with:
           context: .
           file: ./Dockerfile
           push: ${{ github.event_name != 'pull_request' && ( github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master') }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Image digest
+        run: |
+          echo "Build completed" >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ steps.docker_build.outputs.digest }}" >> "$GITHUB_STEP_SUMMARY"
