@@ -1,26 +1,28 @@
-
-version: '3.8'
 services:
-  app:
-    build: .
-    volumes:
-      - ./MUSICGEN_ROOT:/app/MUSICGEN_ROOT
-      - ./HF_HOME:/app/HF_HOME
-      - ./.container-cache:/root/.cahce
-      - ./venv:/app/audio-webui/venv
-    command: "/app/run.sh"
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
+  audio-webui:
+    container_name: audio-webui
     env_file:
-      - .env
+      - .env # Optionally change to your own .env file outside of this git repository
+    build: . # Optionally change to this git repository
+    volumes:
+      # ./data is in the .gitignore file, so it will not be committed to or clash with this git repository
+      - ./data/musicgen_root:/app/MUSICGEN_ROOT # mount the musicgen root folder
+      - ./data/hf_home:/app/HF_HOME # mount the huggingface home folder
+      - ./data/container-cache:/root/.cache # mount the container cache folder
+      - ./data/venv:/app/audio-webui/venv # mount the python venv folder
     ports:
-      - 7860:7860
+      - ${HOST_PORT:-7860}:${HOST_PORT:-7860}
     stdin_open: true
     tty: true
+    shm_size: "2gb" # optional, increases the amount of shared memory available to the container
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    command: "/app/run.sh"
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ['0']
+              device_ids: [all]
               capabilities: [gpu]
