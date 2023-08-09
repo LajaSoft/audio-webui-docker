@@ -15,6 +15,7 @@ RUN --mount=type=cache,target=/var/cache/apt     apt-get update && apt-get insta
     wget \
     unzip \
     git \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/* 
 
 # Upgrade setuptools
