@@ -6,7 +6,8 @@ FROM nvidia/cuda:11.8.0-devel-ubuntu22.04
 WORKDIR /app
 
 # Install Python and pip
-RUN --mount=type=cache,target=/var/cache/apt     apt-get update && apt-get install -y \
+RUN --mount=type=cache,target=/var/cache/apt apt-get update \
+    && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
     python3-dev \
@@ -16,20 +17,22 @@ RUN --mount=type=cache,target=/var/cache/apt     apt-get update && apt-get insta
     unzip \
     git \
     ffmpeg \
-    && rm -rf /var/lib/apt/lists/* 
-
-# Upgrade setuptools
-RUN --mount=type=cache,target=/root/.cache/pip pip3 install --upgrade setuptools
+    && rm -rf /var/lib/apt/lists/*
 
 # Install setuptools and wheel
-RUN --mount=type=cache,target=/root/.cache/pip pip3 install setuptools wheel
+RUN --mount=type=cache,target=/root/.cache/pip pip3 install --upgrade setuptools wheel
 
-RUN wget https://github.com/gitmylo/audio-webui/releases/download/Installers/audio-webui.zip
-RUN unzip audio-webui.zip
+RUN wget https://github.com/gitmylo/audio-webui/releases/download/Installers/audio-webui.zip \
+    && unzip audio-webui.zip \
+    && rm -f audio-webui.zip
+
 RUN --mount=type=cache,target=/root/.cache/pip bash /app/install_linux_macos.sh
 WORKDIR /app/audio-webui
 COPY ./.env /app
 # COPY ./install.sh /app
 COPY ./run.sh /app
-# RUN --mount=type=cache,target=/root/.cache/pip bash /app/install.sh 
+# RUN --mount=type=cache,target=/root/.cache/pip bash /app/install.sh
 # RUN --mount=type=cache,target=/root/.cache/pip pip3 install tensorboardX
+
+EXPOSE ${HOST_PORT:-7860}
+ENTRYPOINT [ "/app/run.sh" ]
