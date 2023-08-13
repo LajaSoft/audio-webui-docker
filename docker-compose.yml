@@ -6,7 +6,7 @@ services:
     volumes:
       - ./MUSICGEN_ROOT:/app/MUSICGEN_ROOT
       - ./HF_HOME:/app/HF_HOME
-      - ./.container-cache:/root/.cahce
+      - ./.container-cache:/root/.cache
       - ./venv:/app/audio-webui/venv
     command: "/app/run.sh"
     environment:
