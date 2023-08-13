@@ -20,9 +20,9 @@ RUN --mount=type=cache,target=/var/cache/apt apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # Install setuptools and wheel
-RUN --mount=type=cache,target=/root/.cache/pip pip3 install --upgrade setuptools wheel
+RUN --mount=type=cache,target=/root/.cache/pip pip3 install --no-cache-dir --upgrade setuptools wheel
 
-RUN wget https://github.com/gitmylo/audio-webui/releases/download/Installers/audio-webui.zip \
+RUN wget -q https://github.com/gitmylo/audio-webui/releases/download/Installers/audio-webui.zip \
     && unzip audio-webui.zip \
     && rm -f audio-webui.zip
 
