@@ -1,20 +1,19 @@
-
-version: '3.8'
+---
+version: "3.8"
 services:
   app:
-    build: .
+    build:
+      context: https://github.com/LajaSoft/audio-webui-docker.git#master
+      dockerfile: Dockerfile
     volumes:
-      - ./MUSICGEN_ROOT:/app/MUSICGEN_ROOT
-      - ./HF_HOME:/app/HF_HOME
-      - ./.container-cache:/root/.cahce
+      - ./MUSICGEN_ROOT:${MUSICGEN_ROOT:-/app/MUSICGEN_ROOT}
+      - ./HF_HOME:${HF_HOME:-/app/HF_HOME}
+      - ./.container-cache:/root/.cache
       - ./venv:/app/audio-webui/venv
-    command: "/app/run.sh"
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
     env_file:
       - .env
     ports:
-      - 7860:7860
+      - ${HOST_PORT:-7860}:${HOST_PORT:-7860}
     stdin_open: true
     tty: true
     deploy:
@@ -22,5 +21,5 @@ services:
         reservations:
           devices:
             - driver: nvidia
-              device_ids: ['0']
+              device_ids: ["0"]
               capabilities: [gpu]
