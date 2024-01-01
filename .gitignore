@@ -1,0 +1,4 @@
+.container-cache/*
+HF_HOME/*
+MUSICGEN_ROOT/*
+venv/*
