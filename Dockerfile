@@ -28,7 +28,8 @@ RUN wget https://github.com/gitmylo/audio-webui/releases/download/Installers/aud
 RUN unzip audio-webui.zip
 RUN --mount=type=cache,target=/root/.cache/pip bash /app/install_linux_macos.sh
 WORKDIR /app/audio-webui
-COPY ./.env /app
+# Copy the .env file into the container
+COPY .env ./env
 # COPY ./install.sh /app
 COPY ./run.sh /app
 # RUN --mount=type=cache,target=/root/.cache/pip bash /app/install.sh 
