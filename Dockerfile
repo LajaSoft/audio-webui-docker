@@ -29,7 +29,9 @@ RUN unzip audio-webui.zip
 RUN --mount=type=cache,target=/root/.cache/pip bash /app/install_linux_macos.sh
 WORKDIR /app/audio-webui
 COPY ./.env /app
+RUN chmod 777 ./app/.env
 # COPY ./install.sh /app
 COPY ./run.sh /app
+RUN chmod 777 ./app/run.sh
 # RUN --mount=type=cache,target=/root/.cache/pip bash /app/install.sh 
 # RUN --mount=type=cache,target=/root/.cache/pip pip3 install tensorboardX
