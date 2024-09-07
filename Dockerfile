@@ -31,5 +31,6 @@ WORKDIR /app/audio-webui
 COPY ./.env /app
 # COPY ./install.sh /app
 COPY ./run.sh /app
+RUN chmod +x /app/run.sh
 # RUN --mount=type=cache,target=/root/.cache/pip bash /app/install.sh 
 # RUN --mount=type=cache,target=/root/.cache/pip pip3 install tensorboardX
